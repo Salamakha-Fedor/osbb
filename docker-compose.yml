@@ -1,0 +1,47 @@
+# web server
+nginx:
+  image: nginx:latest
+  ports:
+    - "80:80"
+  volumes:
+    # app
+    - .:/usr/share/nginx/html
+    # nginx configs
+    - ./.dockerSettings/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    - ./.dockerSettings/nginx/conf.d/:/etc/nginx/conf.d/:ro
+  links:
+    - fpm:__DOCKER_PHP_FPM__
+
+# php-fpm
+fpm:
+  build: ./.dockerSettings/php-fpm
+  ports:
+    - "9000"
+  volumes:
+    - .:/usr/share/nginx/html
+    # Your php.ini
+    - ./.dockerSettings/php-fpm/php.ini:/usr/local/etc/php/php.ini:ro
+  links:
+    - mysql:mysql
+mysql:
+  image: mysql:5.7.21
+  environment:
+    MYSQL_ROOT_PASSWORD: admin
+  volumes:
+     - ../mysql_db:/var/lib/mysql
+     - ./api_documentaion/external_sql:/var/lib/external_sql
+  command: mysqld --sql_mode=""
+  ports:
+    - "3308:3306"
+phpmyadmin:
+  image: phpmyadmin/phpmyadmin
+  restart: always
+  links:
+    - mysql
+  ports:
+    - 8183:80
+  environment:
+    PMA_USER: root
+    PMA_PASSWORD: admin
+    PMA_ARBITRARY: 1
+    PMA_HOST: mysql
